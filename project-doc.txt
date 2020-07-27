@@ -1,0 +1,16 @@
+Packages and dependecies:
+
+Backend:
+Express.js          npm i express
+express-validator   npm i express-validator
+bcryptjs            npm i bcryptjs
+config              npm i config
+gravatar            npm i gravatar      (profile avatars)
+jsonwebtoken(jwt)   npm i jsonwebtoken
+mongoose            npm i mongoose
+request             npm i request    HTTP requests for another API. for Github repos.
+
+
+Dev dependecies:
+Nodemon             npm i nodemon
+concurrently        npm i concurrently
