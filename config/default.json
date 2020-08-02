@@ -1,4 +1,0 @@
-{
-  "MONGO_URI": "mongodb+srv://TJDBuser:zEiC04zRgELTigso@sandbox-bm3zf.mongodb.net/dev-hub-db?retryWrites=true&w=majority",
-  "PORT": "5000"
-}
