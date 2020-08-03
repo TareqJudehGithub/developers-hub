@@ -8,12 +8,12 @@ const config = require("config");
 const chalk = require("chalk");
 
 const User = require("../../models/User");
-const { signInCheck } = require("../../validator/index");
+const { signUpCheck } = require("../../validator/index");
 
 // @route      POST api/users
 // @desc       Register User
 // access      Public
-router.post("/", signInCheck, async (req, res) => {
+router.post("/signup", signUpCheck, async (req, res) => {
   // express-validator:
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -70,7 +70,6 @@ router.post("/", signInCheck, async (req, res) => {
             id: user._id,
             name: user.name,
             email: user.email,
-            avatar: avatar,
           },
         });
       }

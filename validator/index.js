@@ -1,6 +1,6 @@
 const { check } = require("express-validator");
 
-const signInCheck = [
+const signUpCheck = [
   // name:
   check("name", "Name must not be empty.").not().isEmpty().bail(),
   check("name", "Name must be between 3 and 150 characters.").isLength({
@@ -27,6 +27,17 @@ const signInCheck = [
     .bail(),
 ];
 
+const signInCheck = [
+  // email
+  check("email", "Email address must not be empty.").not().isEmpty(),
+  check("email", "Please enter a valid email address.").isEmail(),
+
+  // password:
+  check("password", "Password must not be empty!").not().isEmpty(),
+  check("password", "Password is required!").exists(),
+];
+
 module.exports = {
+  signUpCheck,
   signInCheck,
 };
