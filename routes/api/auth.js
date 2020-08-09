@@ -58,7 +58,7 @@ router.post("/signin", signInCheck, async (req, res) => {
       payload,
       config.get("JWT_SECRET"),
       {
-        expiresIn: 900,
+        expiresIn: 3600,
       },
       (error, token) => {
         if (error) throw error;

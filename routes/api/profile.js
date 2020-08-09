@@ -7,6 +7,7 @@ const chalk = require("chalk");
 
 const Profile = require("../../models/Profile");
 const User = require("../../models/User");
+const { response } = require("express");
 
 // @route      GET api/profile/me
 // @desc       Get current users profile
@@ -14,7 +15,8 @@ const User = require("../../models/User");
 router.get("/me", auth, async (req, res) => {
   try {
     const profile = await Profile.findOne({ user: req.user.id }) // user obj in ProfileSchema.
-      .populate("user", ["name", "avatar"]);
+      .populate("user", ["name", "avatar"])
+      .select("-__v");
     if (!profile) {
       return res
         .status(400)
@@ -26,6 +28,33 @@ router.get("/me", auth, async (req, res) => {
     res
       .status(500)
       .json({ msg: "Server Error! Fetching user profile failed." }.msg);
+  }
+});
+
+// @route   GET api/profile/user/:userId
+// @desc    Get user profile by user Id
+// @access  Public
+router.get("/user/:userId", async (req, res) => {
+  try {
+    const profile = await Profile.findOne({
+      user: req.params.userId,
+    }).populate("user", ["name", "avatar"]);
+
+    if (!profile) {
+      return res
+        .status(400)
+        .json({ errors: [{ msg: "User profile not found!" }][0].msg });
+    }
+    console.log(chalk.blue("GET profile by userId was successfill!"));
+    return res.json(profile);
+  } catch (error) {
+    console.log(chalk.red(error.message));
+    if (error.kind == "ObjectId") {
+      return res
+        .status(400)
+        .json({ errors: [{ msg: "User profile not found!" }][0].msg });
+    }
+    return res.status(500).json({ msg: "Server Error!" });
   }
 });
 
@@ -95,6 +124,36 @@ router.post("/", profileCheck, async (req, res) => {
     console.log(chalk.red(error.message));
     return res.status(500).json({ msg: "Server Error!" });
   }
+});
+
+// @route      GET api/profile
+// @desc       Get all profile
+// access      Public
+router.get("/", async (req, res) => {
+  try {
+    const profiles = await Profile.find().populate("user", ["name", "avatar"]);
+    res.json(profiles);
+  } catch (error) {
+    console.log(chalk.red(error.message));
+    return res.status(500).json({ msg: "Server Error!" });
+  }
+});
+
+// @route   Delete api/profile/:userId
+// @desc    Delete profile: user and posts
+// @access  Private
+router.delete("/", auth, async (req, res) => {
+  try {
+    // @todo - remove users posts
+
+    // Remove profile
+    await Profile.findOneAndRemove({ user: req.user.id });
+
+    // Remove User:
+    await User.findOneAndRemove({ _id: req.user.id });
+    console.log(chalk.blue("User deletion was successfull!"));
+    res.json({ msg: `User was successfully removed!` });
+  } catch (error) {}
 });
 
 module.exports = router;
