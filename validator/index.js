@@ -1,4 +1,5 @@
 const { check } = require("express-validator");
+const auth = require("../middleware/auth");
 
 const signUpCheck = [
   // name:
@@ -36,8 +37,17 @@ const signInCheck = [
   check("password", "Password must not be empty!").not().isEmpty(),
   check("password", "Password is required!").exists(),
 ];
+const profileCheck = [
+  auth,
+  // status
+  check("status", "Status must not be empty!").not().isEmpty(),
+
+  //skills
+  check("skills", "Skills must not be empty!").not().isEmpty(),
+];
 
 module.exports = {
   signUpCheck,
   signInCheck,
+  profileCheck,
 };
