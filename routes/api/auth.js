@@ -1,18 +1,18 @@
 const express = require("express");
 const router = express.Router();
-const auth = require("../../middleware/auth");
-const User = require("../../models/User");
-const { validationResult } = require("express-validator");
 const config = require("config");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-const { signInCheck } = require("../../validator/index");
+const { validationResult } = require("express-validator");
 const chalk = require("chalk");
+
+const auth = require("../../middleware/auth");
+const User = require("../../models/User");
+const { signInCheck } = require("../../validator/index");
 
 // @route      GET api/auth
 // @desc       Get authenticated user
 // access      Public
-
 router.get("/", auth, async (req, res) => {
   try {
     const user = await User.findById(req.user.id).select("-password");
@@ -72,9 +72,10 @@ router.post("/signin", signInCheck, async (req, res) => {
         });
       }
     );
+    console.log(chalk.blue(`${user.name} signed in successfully!`));
   } catch (error) {
     console.log(chalk.red(error.message));
-    return res.status(500).json({ msg: "Server error!" });
+    return res.status(500).json({ msg: "Server error!" }.msg);
   }
 });
 

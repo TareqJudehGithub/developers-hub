@@ -80,8 +80,8 @@ router.post("/signup", signUpCheck, async (req, res) => {
       `${chalk.blue(user.name)} ${chalk.green(`signed in successfully!`)}`
     );
   } catch (error) {
-    console.log(error.message);
-    res.status(500).json({ msg: "Server Error! Sign-in failed." });
+    console.log(chalk.red(error.message));
+    res.status(500).json({ msg: "Server Error! Sign-in failed." }.msg);
   }
 });
 
