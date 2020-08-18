@@ -16,6 +16,12 @@ const { signInCheck } = require("../../validator/index");
 router.get("/", auth, async (req, res) => {
   try {
     const user = await User.findById(req.user.id).select("-password");
+
+    if (!user) {
+      return res
+        .status(400)
+        .json({ errors: [{ msg: `User not found!` }][0].msg });
+    }
     res.json(user);
   } catch (error) {
     console.log(error.message);

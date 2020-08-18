@@ -1,5 +1,6 @@
 const jwt = require("jsonwebtoken");
 const config = require("config");
+const User = require("../models/User");
 
 module.exports = function (req, res, next) {
   // get token from header
@@ -18,8 +19,15 @@ module.exports = function (req, res, next) {
     // set the user inside the payload
     req.user = decoded.user;
 
+    // // disable tokens of deleted users:
+    // const activeUser = User.findById(req.user);
+
+    // if (!activeUser) {
+    //   return res.status(401).json({ msg: "Error! Token is not valid!" });
+    // }
+
     next();
   } catch (error) {
-    res.status(401).json({ msg: "Error! Token is not valid!" });
+    return res.status(401).json({ msg: "Error! Token is not valid!" });
   }
 };

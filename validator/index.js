@@ -45,9 +45,24 @@ const profileCheck = [
   //skills
   check("skills", "Skills must not be empty!").not().isEmpty(),
 ];
+const experienceCheck = [
+  auth,
+  // title
+  check("title", "Title field must not be empty").not().isEmpty(),
+
+  // company
+  check("company", "Company field must not be empty").not().isEmpty(),
+
+  // from
+  check("from", "From field must not be empty").not().isEmpty(),
+
+  // to
+  check("to", "To field must not be empty").not().isEmpty(),
+];
 
 module.exports = {
   signUpCheck,
   signInCheck,
   profileCheck,
+  experienceCheck,
 };
