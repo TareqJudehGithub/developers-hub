@@ -17,6 +17,7 @@ const Profile = require("../../models/Profile");
 const User = require("../../models/User");
 const { response } = require("express");
 const { default: Axios } = require("axios");
+const { route } = require("./users");
 
 // @route      GET api/profile
 // @desc       Get all profile
@@ -258,6 +259,87 @@ router.put("/education", educationCheck, async (req, res) => {
     return res.status(500).json({ errors: `Server Error! ${error}` });
   }
 });
+// router.put("/education/:edu_id", auth, async (req, res) => {
+//   const {
+//     school,
+//     degree,
+//     fieldofstudy,
+//     from,
+//     to,
+//     current,
+//     description,
+//   } = req.body;
+
+//   const profileFields = {};
+
+//   try {
+//     let profile = await Profile.findOne({ user: req.user.id });
+
+//     // console.log("profile.user", profile.user.toString());
+//     console.log("req.user.id", req.user.id);
+//     console.log("params", req.params.edu_id);
+
+//     // const updateIndex = profile.education
+//     //   .map((item) => item._id)
+//     //   .indexOf(req.params.edu_id);
+
+//     let education = (profileFields.education = []);
+//     if (school) education.school = school;
+//     if (degree) education.degree = degree;
+//     if (fieldofstudy) education.fieldofstudy = fieldofstudy;
+//     if (from) education.from = from;
+//     if (to) education.to = to;
+//     if (current) education.current = current;
+//     if (description) education.description = description;
+
+//     education = await Profile.findByIdAndUpdate(
+//       req.params.edu_id,
+//       { $set: education },
+//       { new: true }
+//     );
+//     console.log(education);
+//     // if (profile.user.toString() !== req.user.id) {
+//     //   return res.status(401).json({ msg: "This action is not authorized!" });
+//     // }
+
+//     // profile = await Profile.findOneAndUpdate(
+//     //   { user: req.user.id },
+//     //   { $set: profileFields },
+//     //   { new: true }
+//     // );
+//     await profile.save();
+//     // console.log(profile);
+
+//     res.json(profile);
+//   } catch (error) {
+//     console.log(chalk.red(error.message));
+//     return res.status(500).json({ errors: `Server Error! ${error}` });
+//   }
+// });
+router.put("/education/:edu_id", auth, async (req, res) => {
+  try {
+    const profile = await Profile.findOneAndUpdate(
+      { education: { $elemMatch: { _id: req.params.edu_id } } },
+      {
+        $set: {
+          "education.$.school": req.body.school,
+          "education.$.degree": req.body.degree,
+          "education.$.fieldofstudy": req.body.fieldofstudy,
+          "education.$.from": req.body.from,
+          "education.$.to": req.body.to,
+          "education.$.current": req.body.current,
+          "education.$.description": req.body.description,
+        },
+      },
+      { new: true }
+    );
+    res.json(profile);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ msg: "Server error" });
+  }
+});
+
 // Delete Education
 // @route   Delete api/profile/:edu_id
 // @desc    Delete user profile education
@@ -271,7 +353,7 @@ router.delete("/education/:edu_id", auth, async (req, res) => {
       .indexOf(req.params.edu_id);
 
     profile.education.splice(removeIndex, 1);
-    profile.save();
+    await profile.save();
 
     console.log(chalk.blue(`User profile education was successfully removed!`));
     res.json(profile);
