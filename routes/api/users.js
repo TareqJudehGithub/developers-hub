@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const { validationResult } = require("express-validator");
+const normalizeUrl = require("normalize-url");
 const gravatar = require("gravatar");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
@@ -33,12 +34,14 @@ router.post("/signup", signUpCheck, async (req, res) => {
     }
 
     // get users Gravatar:
-    const avatar = gravatar.url(email, {
-      s: "200", // size
-      r: "pg", // rating
-      d: "mm", // default
-    });
-
+    const avatar = normalizeUrl(
+      gravatar.url(email, {
+        s: "200", // size
+        r: "pg", // rating
+        d: "mm", // default
+      }),
+      { forceHttps: true }
+    );
     user = new User({
       name: name,
       email: email,

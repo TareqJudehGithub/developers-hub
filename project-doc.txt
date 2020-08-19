@@ -13,4 +13,9 @@ Backend:
 Dev dependecies:
      Nodemon             npm i nodemon
      concurrently        npm i concurrently
+
+github API authentication url link:
+// ?            and    (use ? only for the 1st and. After that use &)
+// per_page=5   display only 5 items per page
+// sort=created:asc     sort these items in an ascending order.
      
