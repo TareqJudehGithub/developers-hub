@@ -60,9 +60,27 @@ const experienceCheck = [
   check("to", "To field must not be empty").not().isEmpty(),
 ];
 
+const educationCheck = [
+  auth,
+  // title
+  check("school", "School field must not be empty").not().isEmpty(),
+
+  // company
+  check("degree", "Degree field must not be empty").not().isEmpty().trim(),
+
+  // to
+  check("fieldofstudy", "Field of study field must not be empty")
+    .not()
+    .isEmpty(),
+
+  // from
+  check("from", "From field must not be empty").not().isEmpty(),
+];
+
 module.exports = {
   signUpCheck,
   signInCheck,
   profileCheck,
   experienceCheck,
+  educationCheck,
 };

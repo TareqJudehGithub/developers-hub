@@ -2,7 +2,11 @@ const express = require("express");
 const router = express.Router();
 const auth = require("../../middleware/auth");
 const { validationResult } = require("express-validator");
-const { profileCheck, experienceCheck } = require("../../validator/index");
+const {
+  profileCheck,
+  experienceCheck,
+  educationCheck,
+} = require("../../validator/index");
 const chalk = require("chalk");
 
 const Profile = require("../../models/Profile");
@@ -69,7 +73,7 @@ router.get("/user/:userId", async (req, res) => {
         .status(400)
         .json({ errors: [{ msg: "User profile not found!" }][0].msg });
     }
-    return res.status(500).json({ msg: "Server Error!" });
+    return res.status(500).json({ errors: `Server Error! ${error}` });
   }
 });
 
@@ -118,17 +122,6 @@ router.post("/", profileCheck, async (req, res) => {
   if (instagram) social.instagram = instagram;
   if (linkedin) social.linkedin = linkedin;
 
-  // // Build experience array:
-
-  // const experience = (profile.experience = []);
-  // if (experience.title) experience.title = title;
-  // if (experience.company) experience.company = company;
-  // if (experience.location) experience.location = location;
-  // if (from) experience.from = from;
-  // if (to) experience.to = to;
-  // if (current) experience.current = current;
-  // if (description) experience.description = description;
-
   updated = Date.now();
   if (updated) profileFields.updated = updated;
   try {
@@ -151,10 +144,11 @@ router.post("/", profileCheck, async (req, res) => {
     return res.json(profile);
   } catch (error) {
     console.log(chalk.red(error.message));
-    return res.status(500).json({ msg: "Server Error!" });
+    return res.status(500).json({ errors: `Server Error! ${error}` });
   }
 });
 
+// Add experience
 // @route   PUT api/profile/experince
 // @desc    Add profile experince
 // @access  Private
@@ -177,45 +171,22 @@ router.put("/experience", experienceCheck, async (req, res) => {
     description,
   };
 
-  // const profileExpFields = {};
-  // const experience = (profile.experience = []);
-  // if (title) experience.title = title;
-  // if (company) experience.company = company;
-  // if (location) experience.location = location;
-  // if (from) experience.from = from;
-  // if (to) experience.to = to;
-  // if (current) experience.current = current;
-  // if (description) experience.description = description;
-
   try {
     let profile = await Profile.findOne({ user: req.user.id });
-    // Update profile:
-    // const expId = profile.experience.map((elem) => elem._id);
-    // console.log("exp ID: ", expId);
-    // if (expId) {
-    //   profile = await Profile.findOneAndUpdate(
-    //     { user: req.user.id },
-    //     { $set: experience },
-    //     { new: true }
-    //   );
-    //   // console.log(profileFields);
-    //   console.log(chalk.blue(`User profile experience updated successfully!`));
-    //   return res.json(profile);
-    // }
 
     // Add experience,sorting the latest data up top:
-    // profile = await new Profile(experience);
     profile.experience.unshift(newExp);
     await profile.save();
-    console.log("exp ID: ", expId.length);
+
     console.log(chalk.blue(`User profile experience added successfully!`));
     res.json(profile);
   } catch (error) {
     console.log(chalk.red(error.message));
-    return res.status(500).json({ msg: "Server Error!" });
+    return res.status(500).json({ errors: `Server Error! ${error}` });
   }
 });
 
+// Delete experience
 // @route   Delete api/profile/experience/:exp_id
 // @desc    Delete experience from profile
 // @access  Private
@@ -237,7 +208,71 @@ router.delete("/experience/:exp_id", auth, async (req, res) => {
     res.json(profile);
   } catch (error) {
     console.log(chalk.red(error.message));
-    return res.status(500).json({ msg: "Server Error!" });
+    return res.status(500).json({ errors: `Server Error! ${error}` });
+  }
+});
+
+// Add education
+// @route PUT     api/profile/education
+// @description   api/profile/description
+// @access        Private
+
+router.put("/education", educationCheck, async (req, res) => {
+  const {
+    school,
+    degree,
+    fieldofstudy,
+    from,
+    to,
+    current,
+    description,
+  } = req.body;
+
+  const newEdu = {
+    school,
+    degree,
+    fieldofstudy,
+    from,
+    to,
+    current,
+    description,
+  };
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(422).json({ errors: errors.array()[0].msg });
+  }
+
+  try {
+    let profile = await Profile.findOne({ user: req.user.id });
+    profile.education.unshift(newEdu);
+    await profile.save();
+    console.log(chalk.blue("New education has been added successfully!"));
+    res.json(profile);
+  } catch (error) {
+    console.log(chalk.red(error.message));
+    return res.status(500).json({ errors: `Server Error! ${error}` });
+  }
+});
+// Delete Education
+// @route   Delete api/profile/:edu_id
+// @desc    Delete user profile education
+// @access Private
+router.delete("/education/:edu_id", auth, async (req, res) => {
+  try {
+    let profile = await Profile.findOne({ user: req.user.id });
+    // Get remove index:
+    const removeIndex = profile.education
+      .map((item) => item._id)
+      .indexOf(req.params.edu_id);
+
+    profile.education.splice(removeIndex, 1);
+    profile.save();
+
+    console.log(chalk.blue(`User profile education was successfully removed!`));
+    res.json(profile);
+  } catch (error) {
+    console.log(chalk.red(error.message));
+    return res.status(500).json({ errors: `Server Error! ${error}` });
   }
 });
 
@@ -267,3 +302,27 @@ router.delete("/", auth, async (req, res) => {
 });
 
 module.exports = router;
+
+// const profileExpFields = {};
+// const experience = (profile.experience = []);
+// if (title) experience.title = title;
+// if (company) experience.company = company;
+// if (location) experience.location = location;
+// if (from) experience.from = from;
+// if (to) experience.to = to;
+// if (current) experience.current = current;
+// if (description) experience.description = description;
+
+// Update profile:
+// const expId = profile.experience.map((elem) => elem._id);
+// console.log("exp ID: ", expId);
+// if (expId) {
+//   profile = await Profile.findOneAndUpdate(
+//     { user: req.user.id },
+//     { $set: experience },
+//     { new: true }
+//   );
+//   // console.log(profileFields);
+//   console.log(chalk.blue(`User profile experience updated successfully!`));
+//   return res.json(profile);
+// }
