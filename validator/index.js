@@ -3,7 +3,7 @@ const auth = require("../middleware/auth");
 
 const signUpCheck = [
   // name:
-  check("name", "Name must not be empty.").not().isEmpty().bail(),
+  check("name", "Name must not be empty.").trim().not().isEmpty().bail(),
   check("name", "Name must be between 3 and 150 characters.").isLength({
     min: 3,
     max: 150,
@@ -17,7 +17,7 @@ const signUpCheck = [
   check("email", "Email address already exists.").exists(),
 
   // password:
-  check("password", "Password must not be empty.").not().isEmpty(),
+  check("password", "Password must not be empty.").trim().not().isEmpty(),
   check("password", "Password must be between 6 and 15 characters.").isLength({
     min: 6,
     max: 15,
@@ -34,47 +34,48 @@ const signInCheck = [
   check("email", "Please enter a valid email address.").isEmail(),
 
   // password:
-  check("password", "Password must not be empty!").not().isEmpty(),
+  check("password", "Password must not be empty!").trim().not().isEmpty(),
   check("password", "Password is required!").exists(),
 ];
 const profileCheck = [
   auth,
   // status
-  check("status", "Status must not be empty!").not().isEmpty(),
+  check("status", "Status must not be empty!").trim().not().isEmpty(),
 
   //skills
-  check("skills", "Skills must not be empty!").not().isEmpty(),
+  check("skills", "Skills must not be empty!").trim().not().isEmpty(),
 ];
 const experienceCheck = [
   auth,
   // title
-  check("title", "Title field must not be empty").not().isEmpty(),
+  check("title", "Title field must not be empty").trim().not().isEmpty(),
 
   // company
-  check("company", "Company field must not be empty").not().isEmpty(),
+  check("company", "Company field must not be empty").trim().not().isEmpty(),
 
   // from
-  check("from", "From field must not be empty").not().isEmpty(),
+  check("from", "From field must not be empty").trim().not().isEmpty(),
 
   // to
-  check("to", "To field must not be empty").not().isEmpty(),
+  check("to", "To field must not be empty").trim().not().isEmpty(),
 ];
 
 const educationCheck = [
   auth,
   // title
-  check("school", "School field must not be empty").not().isEmpty(),
+  check("school", "School field must not be empty").trim().not().isEmpty(),
 
   // company
-  check("degree", "Degree field must not be empty").not().isEmpty().trim(),
+  check("degree", "Degree field must not be empty").trim().not().isEmpty(),
 
   // to
   check("fieldofstudy", "Field of study field must not be empty")
+    .trim()
     .not()
     .isEmpty(),
 
   // from
-  check("from", "From field must not be empty").not().isEmpty(),
+  check("from", "From field must not be empty").trim().not().isEmpty(),
 ];
 
 module.exports = {

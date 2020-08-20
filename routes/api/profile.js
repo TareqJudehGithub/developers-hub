@@ -316,23 +316,57 @@ router.put("/education", educationCheck, async (req, res) => {
 //     return res.status(500).json({ errors: `Server Error! ${error}` });
 //   }
 // });
-router.put("/education/:edu_id", auth, async (req, res) => {
+router.put("/education/:edu_id", educationCheck, async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(422).json({ errors: errors.array()[0].msg });
+  }
   try {
-    const profile = await Profile.findOneAndUpdate(
+    const {
+      school,
+      degree,
+      fieldofstudy,
+      from,
+      to,
+      current,
+      description,
+    } = req.body;
+
+    let profile = await Profile.findOne({ user: req.user.id });
+
+    const findEdu = profile.education.map((elem) => elem._id);
+    // .indexOf(req.params.edu_id);
+    console.log(findEdu.length);
+    if (findEdu.length === 0) {
+      return res.status(401).json({ msg: "Please add a new education first." });
+    }
+    if (!req.params.edu_id) {
+      return res.status(401).json({ msg: "No record found!" });
+    }
+    const eduId = profile.education
+      .map((item) => item._id)
+      .includes(req.params.edu_id);
+    console.log(eduId);
+    if (!eduId) {
+      return res.status(401).json({ msg: "No record found!" });
+    }
+
+    profile = await Profile.findOneAndUpdate(
       { education: { $elemMatch: { _id: req.params.edu_id } } },
       {
         $set: {
-          "education.$.school": req.body.school,
-          "education.$.degree": req.body.degree,
-          "education.$.fieldofstudy": req.body.fieldofstudy,
-          "education.$.from": req.body.from,
-          "education.$.to": req.body.to,
-          "education.$.current": req.body.current,
-          "education.$.description": req.body.description,
+          "education.$.school": school,
+          "education.$.degree": degree,
+          "education.$.fieldofstudy": fieldofstudy,
+          "education.$.from": from,
+          "education.$.to": to,
+          "education.$.current": current,
+          "education.$.description": description,
         },
       },
       { new: true }
     );
+    console.log("");
     res.json(profile);
   } catch (error) {
     console.error(error);
@@ -350,8 +384,10 @@ router.delete("/education/:edu_id", auth, async (req, res) => {
     // Get remove index:
     const removeIndex = profile.education
       .map((item) => item._id)
-      .indexOf(req.params.edu_id);
-
+      .includes(req.params.edu_id);
+    if (!removeIndex) {
+      return res.status(401).json({ msg: "No record found!" });
+    }
     profile.education.splice(removeIndex, 1);
     await profile.save();
 
