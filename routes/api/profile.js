@@ -388,8 +388,14 @@ router.delete("/education/:edu_id", auth, async (req, res) => {
     if (!removeIndex) {
       return res.status(401).json({ msg: "No record found!" });
     }
-    profile.education.splice(removeIndex, 1);
-    await profile.save();
+    profile = await Profile.findOneAndUpdate(
+      { user: req.user.id },
+      { $pull: { education: { _id: req.params.edu_id } } }
+      // { education: { $elemMatch: { _id: req.params.edu_id } } }
+    );
+
+    // profile.education.splice(removeIndex, 1);
+    // await profile.save();
 
     console.log(chalk.blue(`User profile education was successfully removed!`));
     res.json(profile);
