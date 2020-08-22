@@ -154,6 +154,8 @@ router.post("/", profileCheck, async (req, res) => {
   }
 });
 
+// Profile Experience:
+
 // Add experience
 // @route   PUT api/profile/experince
 // @desc    Add profile experince
@@ -167,22 +169,39 @@ router.put("/experience", experienceCheck, async (req, res) => {
   const { title, company, location, from, to, current, description } = req.body;
   // Create a new obj with the data the user submits:
 
-  const newExp = {
-    title,
-    company,
-    location,
-    from,
-    to,
-    current,
-    description,
-  };
+  // const newExp = {
+  //   title,
+  //   company,
+  //   location,
+  //   from,
+  //   to,
+  //   current,
+  //   description,
+  // };
 
   try {
-    let profile = await Profile.findOne({ user: req.user.id });
-
     // Add experience,sorting the latest data up top:
-    profile.experience.unshift(newExp);
-    await profile.save();
+    const profile = await Profile.findOneAndUpdate(
+      { user: req.user.id },
+      {
+        $push: {
+          experience: [
+            {
+              title: title,
+              company: company,
+              location: location,
+              from: from,
+              to: to,
+              current: current,
+              description: description,
+            },
+          ],
+        },
+      }
+    );
+
+    // profile.experience.unshift(newExp);
+    // await profile.save();
 
     console.log(chalk.blue(`User profile experience added successfully!`));
     res.json(profile);
@@ -191,6 +210,63 @@ router.put("/experience", experienceCheck, async (req, res) => {
     return res.status(500).json({ errors: `Server Error! ${error}` });
   }
 });
+// Update experience
+// @route   PUT api/profile/experience/:exp_id
+// @desc    Update experience in profile
+// @access  Private
+router.put("/experience/:exp_id", experienceCheck, async (req, res) => {
+  const { title, company, location, from, to, current, description } = req.body;
+  let profile = await Profile.findOne({ user: req.user.id });
+  try {
+    const expIndex = profile.experience
+      .map((item) => item._id)
+      .includes(req.params.exp_id);
+    console.log("index", expIndex);
+    console.log(`params: ${req.params.exp_id}`);
+    if (!expIndex) {
+      return res.status(401).json({ msg: "Record not found!" });
+    }
+    profile = await Profile.findOneAndUpdate(
+      {
+        experience: { $elemMatch: { _id: req.params.exp_id } },
+      },
+      {
+        $set: {
+          "experience.$.title": title,
+          "experience.$.company": company,
+          "experience.$.location": location,
+          "experience.$.from": from,
+          "experience.$.to": to,
+          "experience.$.current": current,
+          "experience.$.description": description,
+        },
+      },
+      { new: true }
+    );
+    res.json(profile);
+    console.log(chalk.blue("Profile experience update was successful!"));
+  } catch (error) {
+    console.log(chalk.red(error.message));
+    return res.status(500).json({ msg: `Server Error! ${error}` });
+  }
+});
+
+// how i implemented Update Education:
+// profile = await Profile.findOneAndUpdate(
+//   { education: { $elemMatch: { _id: req.params.edu_id } } },
+//   {
+//     $set: {
+//       "education.$.school": school,
+//       "education.$.degree": degree,
+//       "education.$.fieldofstudy": fieldofstudy,
+//       "education.$.from": from,
+//       "education.$.to": to,
+//       "education.$.current": current,
+//       "education.$.description": description,
+//     },
+//   },
+//   { new: true }
+// );
 
 // Delete experience
 // @route   Delete api/profile/experience/:exp_id
@@ -230,6 +306,8 @@ router.delete("/experience/:exp_id", auth, async (req, res) => {
   }
 });
 
+// Profile Education:
+
 // Add education
 // @route PUT     api/profile/education
 // @description   api/profile/description
@@ -246,24 +324,42 @@ router.put("/education", educationCheck, async (req, res) => {
     description,
   } = req.body;
 
-  const newEdu = {
-    school,
-    degree,
-    fieldofstudy,
-    from,
-    to,
-    current,
-    description,
-  };
+  // const newEdu = {
+  //   school,
+  //   degree,
+  //   fieldofstudy,
+  //   from,
+  //   to,
+  //   current,
+  //   description,
+  // };
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res.status(422).json({ errors: errors.array()[0].msg });
   }
 
   try {
-    let profile = await Profile.findOne({ user: req.user.id });
-    profile.education.unshift(newEdu);
-    await profile.save();
+    const profile = await Profile.findOneAndUpdate(
+      { user: req.user.id },
+      {
+        $push: {
+          education: [
+            {
+              school: school,
+              degree: degree,
+              fieldofstudy: fieldofstudy,
+              from: from,
+              to: to,
+              current: current,
+              description: description,
+            },
+          ],
+        },
+      }
+    );
+
+    // profile.education.unshift(newEdu);
+    // await profile.save();
     console.log(chalk.blue("New education has been added successfully!"));
     res.json(profile);
   } catch (error) {
@@ -271,7 +367,7 @@ router.put("/education", educationCheck, async (req, res) => {
     return res.status(500).json({ errors: `Server Error! ${error}` });
   }
 });
-
+// Update Education in Profile:
 router.put("/education/:edu_id", educationCheck, async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -290,19 +386,10 @@ router.put("/education/:edu_id", educationCheck, async (req, res) => {
 
     let profile = await Profile.findOne({ user: req.user.id });
 
-    const findEdu = profile.education.map((elem) => elem._id);
-    // .indexOf(req.params.edu_id);
-    console.log(findEdu.length);
-    if (findEdu.length === 0) {
-      return res.status(401).json({ msg: "Please add a new education first." });
-    }
-    if (!req.params.edu_id) {
-      return res.status(401).json({ msg: "No record found!" });
-    }
+    // Check if record exists:
     const eduId = profile.education
       .map((item) => item._id)
       .includes(req.params.edu_id);
-    console.log(eduId);
     if (!eduId) {
       return res.status(401).json({ msg: "No record found!" });
     }
@@ -322,7 +409,6 @@ router.put("/education/:edu_id", educationCheck, async (req, res) => {
       },
       { new: true }
     );
-    console.log("");
     res.json(profile);
   } catch (error) {
     console.error(error);
@@ -337,13 +423,15 @@ router.put("/education/:edu_id", educationCheck, async (req, res) => {
 router.delete("/education/:edu_id", auth, async (req, res) => {
   try {
     let profile = await Profile.findOne({ user: req.user.id });
-    // Get remove index:
+
+    // Check if record exists:
     const eduIndex = profile.education
       .map((item) => item._id)
       .includes(req.params.edu_id);
     if (!eduIndex) {
       return res.status(401).json({ msg: "No record found!" });
     }
+    // Remove index:
     profile = await Profile.findOneAndUpdate(
       { user: req.user.id },
       { $pull: { education: { _id: req.params.edu_id } } }
