@@ -199,19 +199,31 @@ router.put("/experience", experienceCheck, async (req, res) => {
 router.delete("/experience/:exp_id", auth, async (req, res) => {
   try {
     // Get the profile of the logged in user:
-    const profile = await Profile.findOne({ user: req.user.id });
+    let profile = await Profile.findOne({ user: req.user.id });
 
-    // Get remove index:
-    const removeIndex = profile.experience
+    // Check if record exists:
+    const expIndex = profile.experience
       .map((item) => item._id)
-      .indexOf(req.params.exp_id);
-    profile.experience.splice(removeIndex, 1);
+      .includes(req.params.exp_id);
 
-    await profile.save();
+    if (!expIndex) {
+      return res.status(401).json({ msg: "No record found!" });
+    }
+    // Get remove index:
+    profile = await Profile.findOneAndUpdate(
+      { user: req.user.id },
+      { $pull: { experience: { _id: req.params.exp_id } } }
+    );
+    // const removeIndex = profile.experience
+    //   .map((item) => item._id)
+    //   .indexOf(req.params.exp_id);
+    // profile.experience.splice(removeIndex, 1);
+
+    // await profile.save();
     console.log(
       chalk.blue(`User profile experience was successfully removed!`)
     );
-    res.json(profile);
+    res.json(profile.experience);
   } catch (error) {
     console.log(chalk.red(error.message));
     return res.status(500).json({ errors: `Server Error! ${error}` });
@@ -259,63 +271,7 @@ router.put("/education", educationCheck, async (req, res) => {
     return res.status(500).json({ errors: `Server Error! ${error}` });
   }
 });
-// router.put("/education/:edu_id", auth, async (req, res) => {
-//   const {
-//     school,
-//     degree,
-//     fieldofstudy,
-//     from,
-//     to,
-//     current,
-//     description,
-//   } = req.body;
 
-//   const profileFields = {};
-
-//   try {
-//     let profile = await Profile.findOne({ user: req.user.id });
-
-//     // console.log("profile.user", profile.user.toString());
-//     console.log("req.user.id", req.user.id);
-//     console.log("params", req.params.edu_id);
-
-//     // const updateIndex = profile.education
-//     //   .map((item) => item._id)
-//     //   .indexOf(req.params.edu_id);
-
-//     let education = (profileFields.education = []);
-//     if (school) education.school = school;
-//     if (degree) education.degree = degree;
-//     if (fieldofstudy) education.fieldofstudy = fieldofstudy;
-//     if (from) education.from = from;
-//     if (to) education.to = to;
-//     if (current) education.current = current;
-//     if (description) education.description = description;
-
-//     education = await Profile.findByIdAndUpdate(
-//       req.params.edu_id,
-//       { $set: education },
-//       { new: true }
-//     );
-//     console.log(education);
-//     // if (profile.user.toString() !== req.user.id) {
-//     //   return res.status(401).json({ msg: "This action is not authorized!" });
-//     // }
-
-//     // profile = await Profile.findOneAndUpdate(
-//     //   { user: req.user.id },
-//     //   { $set: profileFields },
-//     //   { new: true }
-//     // );
-//     await profile.save();
-//     // console.log(profile);
-
-//     res.json(profile);
-//   } catch (error) {
-//     console.log(chalk.red(error.message));
-//     return res.status(500).json({ errors: `Server Error! ${error}` });
-//   }
-// });
 router.put("/education/:edu_id", educationCheck, async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -382,16 +338,15 @@ router.delete("/education/:edu_id", auth, async (req, res) => {
   try {
     let profile = await Profile.findOne({ user: req.user.id });
     // Get remove index:
-    const removeIndex = profile.education
+    const eduIndex = profile.education
       .map((item) => item._id)
       .includes(req.params.edu_id);
-    if (!removeIndex) {
+    if (!eduIndex) {
       return res.status(401).json({ msg: "No record found!" });
     }
     profile = await Profile.findOneAndUpdate(
       { user: req.user.id },
       { $pull: { education: { _id: req.params.edu_id } } }
-      // { education: { $elemMatch: { _id: req.params.edu_id } } }
     );
 
     // profile.education.splice(removeIndex, 1);
