@@ -19,7 +19,7 @@ router.get("/", auth, async (req, res) => {
 
     if (!user) {
       return res
-        .status(400)
+        .status(404)
         .json({ errors: [{ msg: `User not found!` }][0].msg });
     }
     res.json(user);
@@ -44,7 +44,7 @@ router.post("/signin", signInCheck, async (req, res) => {
     let user = await User.findOne({ email: email });
     if (!user) {
       return res
-        .status(401)
+        .status(404)
         .json({ errors: [{ msg: "Error! User does not exist." }][0].msg });
     }
     // check password:

@@ -44,7 +44,7 @@ router.get("/me", auth, async (req, res) => {
       .select("-__v -updated");
     if (!profile) {
       return res
-        .status(400)
+        .status(404)
         .json({ errors: [{ msg: "User profile not found!" }][0].msg });
     }
     res.json(profile);
@@ -76,7 +76,7 @@ router.get("/user/:userId", async (req, res) => {
     console.log(chalk.red(error.message));
     if (error.kind == "ObjectId") {
       return res
-        .status(400)
+        .status(404)
         .json({ errors: [{ msg: "User profile not found!" }][0].msg });
     }
     return res.status(500).json({ errors: `Server Error! ${error}` });
@@ -108,44 +108,99 @@ router.post("/", profileCheck, async (req, res) => {
   } = req.body;
 
   // Build profile object:
-  const profileFields = {};
-  profileFields.user = req.user.id;
-  if (company) profileFields.company = company;
-  if (website) profileFields.website = website;
-  if (location) profileFields.location = location;
-  if (bio) profileFields.bio = bio;
-  if (status) profileFields.status = status;
-  if (githubusername) profileFields.githubusername = githubusername;
+  // const profileFields = {};
+  // profileFields.user = req.user.id;
+  // if (company) profileFields.company = company;
+  // if (website) profileFields.website = website;
+  // if (location) profileFields.location = location;
+  // if (bio) profileFields.bio = bio;
+  // if (status) profileFields.status = status;
+  // if (githubusername) profileFields.githubusername = githubusername;
   if (skills) {
     // split skills into an array:
-    profileFields.skills = skills.split(",").map((skill) => skill.trim());
+    skills = skills.split(",").map((skill) => skill.trim());
   }
   // Build social object:
-  const social = (profileFields.social = {});
-  if (youtube) social.youtube = youtube;
-  if (facebook) social.facebook = facebook;
-  if (twitter) social.twitter = twitter;
-  if (instagram) social.instagram = instagram;
-  if (linkedin) social.linkedin = linkedin;
+  // const social = (profileFields.social = {});
+  // if (youtube) social.youtube = youtube;
+  // if (facebook) social.facebook = facebook;
+  // if (twitter) social.twitter = twitter;
+  // if (instagram) social.instagram = instagram;
+  // if (linkedin) social.linkedin = linkedin;
 
-  updated = Date.now();
-  if (updated) profileFields.updated = updated;
+  let profileFields = {
+    company: company,
+    website: website,
+    location: location,
+    bio: bio,
+    status: status,
+    githubusername: githubusername,
+    skills: skills,
+    // updated: Date.now(),
+    social: [
+      {
+        youtube: youtube,
+        facebook: facebook,
+        twitter: twitter,
+        instagram: instagram,
+        linkedin: linkedin,
+      },
+    ],
+  };
+  // if (updated) profileFields.updated = updated;
+  // updated = Date.now();
+
   try {
     let profile = await Profile.findOne({ user: req.user.id });
+    // if (!profile) {
+    //   return res.status(404).json({ msg: "Error! User profile not found!" });
+    // }
 
     // Update:
     if (profile) {
+      updated = Date.now();
       profile = await Profile.findOneAndUpdate(
         { user: req.user.id },
-        { $set: profileFields },
+        { $set: profileFields, updated: updated },
         { new: true }
       );
       console.log(chalk.blue(`User profile details updated successfully!`));
       return res.json(profile);
     }
+
     // Create new profile:
-    profile = new Profile(profileFields);
-    await profile.save();
+    console.log(`user: ${req.user.id}`);
+    profile = await Profile.findOneAndUpdate(
+      { user: req.user.id },
+      // { $set: { _id: req.user.id } },
+      {
+        $setOnInsert: profileFields,
+        // $setOnInsert: {
+
+        // company: company,
+        // website: website,
+        // location: location,
+        // bio: bio,
+        // status: status,
+        // githubusername: githubusername,
+        // skills: {skills: skills},
+        // updated: updated,
+        // social: [
+        //   {
+        //     youtube: youtube,
+        //     facebook: facebook,
+        //     twitter: twitter,
+        //     instagram: instagram,
+        //     linkedin: linkedin,
+        //   },
+        // ]
+        // },
+      },
+      { upsert: true }
+    );
+
+    // profile = new Profile(profileFields);
+    // await profile.save();
     console.log(chalk.blue(`User new profile was successfully! created!`));
     return res.json(profile);
   } catch (error) {
@@ -210,7 +265,7 @@ router.put("/experience", experienceCheck, async (req, res) => {
     return res.status(500).json({ errors: `Server Error! ${error}` });
   }
 });
-// Update experience
+// Update Profile Experience:
 // @route   PUT api/profile/experience/:exp_id
 // @desc    Update experience in profile
 // @access  Private
@@ -224,7 +279,7 @@ router.put("/experience/:exp_id", experienceCheck, async (req, res) => {
     console.log("index", expIndex);
     console.log(`params: ${req.params.exp_id}`);
     if (!expIndex) {
-      return res.status(401).json({ msg: "Record not found!" });
+      return res.status(404).json({ msg: "Record not found!" });
     }
     profile = await Profile.findOneAndUpdate(
       {
@@ -274,6 +329,11 @@ router.put("/experience/:exp_id", experienceCheck, async (req, res) => {
 // @access  Private
 router.delete("/experience/:exp_id", auth, async (req, res) => {
   try {
+    // Check if user exists:
+    const user = await User.findOne({ user: req.user.id });
+    if (!user) {
+      return res.status(404).json({ msg: "Error! User not found!" });
+    }
     // Get the profile of the logged in user:
     let profile = await Profile.findOne({ user: req.user.id });
 
@@ -339,7 +399,13 @@ router.put("/education", educationCheck, async (req, res) => {
   }
 
   try {
-    const profile = await Profile.findOneAndUpdate(
+    // Check if user exists:
+    const user = await User.findOne({ user: req.user.id });
+    if (!user) {
+      return res.status(404).json({ msg: "Error! User not found!" });
+    }
+
+    profile = await Profile.findOneAndUpdate(
       { user: req.user.id },
       {
         $push: {
@@ -384,7 +450,16 @@ router.put("/education/:edu_id", educationCheck, async (req, res) => {
       description,
     } = req.body;
 
+    // Check if user exists:
+    const user = await User.findOne({ user: req.user.id });
+    if (!user) {
+      return res.status(404).json({ msg: "Error! User not found!" });
+    }
+    // Check if profile exists:
     let profile = await Profile.findOne({ user: req.user.id });
+    if (!profile) {
+      return res.status(404).json({ msg: "Error! User profile not found!" });
+    }
 
     // Check if record exists:
     const eduId = profile.education
@@ -462,7 +537,7 @@ router.delete("/", auth, async (req, res) => {
     const user = await User.findOneAndRemove({ _id: req.user.id });
     if (!user) {
       return res
-        .status(400)
+        .status(404)
         .json({ errors: [{ msg: `User not found!` }][0].msg });
     }
     console.log(chalk.blue("User deletion was successfull!"));

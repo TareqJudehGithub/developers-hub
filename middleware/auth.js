@@ -19,12 +19,12 @@ module.exports = function (req, res, next) {
     // set the user inside the payload
     req.user = decoded.user;
 
-    // // disable tokens of deleted users:
-    // const activeUser = User.findById(req.user);
+    // disable tokens of deleted users:
+    const activeUser = User.findById(req.user);
 
-    // if (!activeUser) {
-    //   return res.status(401).json({ msg: "Error! Token is not valid!" });
-    // }
+    if (!activeUser) {
+      return res.status(401).json({ msg: "Error! User no longer exists" });
+    }
 
     next();
   } catch (error) {
