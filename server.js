@@ -1,5 +1,6 @@
 const express = require("express");
 const config = require("config");
+const chalk = require("chalk");
 
 const connectDB = require("./config/db");
 
@@ -15,6 +16,7 @@ const postsRoute = require("./routes/api/posts");
 const profileRoute = require("./routes/api/profile");
 const usersRoute = require("./routes/api/users");
 
+
 app.get("/", (req, res) => {
   res.send(`<h1>Hello from Express.js server!</h1>`);
 });
@@ -27,5 +29,5 @@ app.use("/api/users", usersRoute);
 const PORT = config.get("PORT") || 5000;
 
 app.listen(PORT, () => {
-  console.log(`Express up and running on PORT ${PORT}`);
+  console.log(chalk.blue.bold(`Express is up and running on PORT ${PORT}`));
 });

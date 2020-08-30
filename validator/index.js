@@ -78,10 +78,20 @@ const educationCheck = [
   check("from", "From field must not be empty").trim().not().isEmpty(),
 ];
 
+// Posts
+const postCheck = [
+  auth,
+
+  // text
+  check("text", "Text field must not be empty.").trim().not().isEmpty()
+
+]
 module.exports = {
   signUpCheck,
   signInCheck,
   profileCheck,
   experienceCheck,
   educationCheck,
+  postCheck
 };
+

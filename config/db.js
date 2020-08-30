@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 const config = require("config");
+const chalk = require("chalk");
 
 // fetching the MongoDB driver from default.json:
 const db = config.get("MONGO_URI");
@@ -23,7 +24,7 @@ const connectDB = async () => {
 const Mongodb = mongoose.connection;
 Mongodb.on("error", console.error.bind(console, "connection error:"));
 Mongodb.once("open", function () {
-  console.log("We're connected to Mongoose!");
+  console.log(chalk.blue.bold("We're connected to Mongoose!"));
 });
 
 module.exports = connectDB;

@@ -2,14 +2,16 @@ const express = require("express");
 const router = express.Router();
 // const Axios = require("axios");
 const normalizeUrl = require("normalize-url");
+
 const auth = require("../../middleware/auth");
 const { validationResult } = require("express-validator");
+
 const {
   profileCheck,
   experienceCheck,
   educationCheck,
 } = require("../../validator/index");
-const request = require("request");
+
 const config = require("config");
 const chalk = require("chalk");
 
@@ -17,7 +19,7 @@ const Profile = require("../../models/Profile");
 const User = require("../../models/User");
 const { response } = require("express");
 const { default: Axios } = require("axios");
-const { route } = require("./users");
+
 
 // @route      GET api/profile
 // @desc       Get all profile
@@ -107,26 +109,10 @@ router.post("/", profileCheck, async (req, res) => {
     updated,
   } = req.body;
 
-  // Build profile object:
-  // const profileFields = {};
-  // profileFields.user = req.user.id;
-  // if (company) profileFields.company = company;
-  // if (website) profileFields.website = website;
-  // if (location) profileFields.location = location;
-  // if (bio) profileFields.bio = bio;
-  // if (status) profileFields.status = status;
-  // if (githubusername) profileFields.githubusername = githubusername;
   if (skills) {
     // split skills into an array:
     skills = skills.split(",").map((skill) => skill.trim());
   }
-  // Build social object:
-  // const social = (profileFields.social = {});
-  // if (youtube) social.youtube = youtube;
-  // if (facebook) social.facebook = facebook;
-  // if (twitter) social.twitter = twitter;
-  // if (instagram) social.instagram = instagram;
-  // if (linkedin) social.linkedin = linkedin;
 
   let profileFields = {
     company: company,
@@ -136,7 +122,6 @@ router.post("/", profileCheck, async (req, res) => {
     status: status,
     githubusername: githubusername,
     skills: skills,
-    // updated: Date.now(),
     social: [
       {
         youtube: youtube,
@@ -147,16 +132,11 @@ router.post("/", profileCheck, async (req, res) => {
       },
     ],
   };
-  // if (updated) profileFields.updated = updated;
-  // updated = Date.now();
 
   try {
     let profile = await Profile.findOne({ user: req.user.id });
-    // if (!profile) {
-    //   return res.status(404).json({ msg: "Error! User profile not found!" });
-    // }
 
-    // Update:
+    // Update Profile:
     if (profile) {
       updated = Date.now();
       profile = await Profile.findOneAndUpdate(
@@ -172,35 +152,12 @@ router.post("/", profileCheck, async (req, res) => {
     console.log(`user: ${req.user.id}`);
     profile = await Profile.findOneAndUpdate(
       { user: req.user.id },
-      // { $set: { _id: req.user.id } },
       {
         $setOnInsert: profileFields,
-        // $setOnInsert: {
-
-        // company: company,
-        // website: website,
-        // location: location,
-        // bio: bio,
-        // status: status,
-        // githubusername: githubusername,
-        // skills: {skills: skills},
-        // updated: updated,
-        // social: [
-        //   {
-        //     youtube: youtube,
-        //     facebook: facebook,
-        //     twitter: twitter,
-        //     instagram: instagram,
-        //     linkedin: linkedin,
-        //   },
-        // ]
-        // },
       },
       { upsert: true }
     );
 
-    // profile = new Profile(profileFields);
-    // await profile.save();
     console.log(chalk.blue(`User new profile was successfully! created!`));
     return res.json(profile);
   } catch (error) {
@@ -222,20 +179,9 @@ router.put("/experience", experienceCheck, async (req, res) => {
   }
 
   const { title, company, location, from, to, current, description } = req.body;
-  // Create a new obj with the data the user submits:
-
-  // const newExp = {
-  //   title,
-  //   company,
-  //   location,
-  //   from,
-  //   to,
-  //   current,
-  //   description,
-  // };
 
   try {
-    // Add experience,sorting the latest data up top:
+    // Add experience:
     const profile = await Profile.findOneAndUpdate(
       { user: req.user.id },
       {
@@ -254,9 +200,6 @@ router.put("/experience", experienceCheck, async (req, res) => {
         },
       }
     );
-
-    // profile.experience.unshift(newExp);
-    // await profile.save();
 
     console.log(chalk.blue(`User profile experience added successfully!`));
     res.json(profile);
@@ -306,23 +249,6 @@ router.put("/experience/:exp_id", experienceCheck, async (req, res) => {
   }
 });
 
-// how i implemented Update Education:
-// profile = await Profile.findOneAndUpdate(
-//   { education: { $elemMatch: { _id: req.params.edu_id } } },
-//   {
-//     $set: {
-//       "education.$.school": school,
-//       "education.$.degree": degree,
-//       "education.$.fieldofstudy": fieldofstudy,
-//       "education.$.from": from,
-//       "education.$.to": to,
-//       "education.$.current": current,
-//       "education.$.description": description,
-//     },
-//   },
-//   { new: true }
-// );
-
 // Delete experience
 // @route   Delete api/profile/experience/:exp_id
 // @desc    Delete experience from profile
@@ -337,7 +263,7 @@ router.delete("/experience/:exp_id", auth, async (req, res) => {
     // Get the profile of the logged in user:
     let profile = await Profile.findOne({ user: req.user.id });
 
-    // Check if record exists:
+    // Check if index exists:
     const expIndex = profile.experience
       .map((item) => item._id)
       .includes(req.params.exp_id);
@@ -350,12 +276,7 @@ router.delete("/experience/:exp_id", auth, async (req, res) => {
       { user: req.user.id },
       { $pull: { experience: { _id: req.params.exp_id } } }
     );
-    // const removeIndex = profile.experience
-    //   .map((item) => item._id)
-    //   .indexOf(req.params.exp_id);
-    // profile.experience.splice(removeIndex, 1);
 
-    // await profile.save();
     console.log(
       chalk.blue(`User profile experience was successfully removed!`)
     );
@@ -384,15 +305,6 @@ router.put("/education", educationCheck, async (req, res) => {
     description,
   } = req.body;
 
-  // const newEdu = {
-  //   school,
-  //   degree,
-  //   fieldofstudy,
-  //   from,
-  //   to,
-  //   current,
-  //   description,
-  // };
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res.status(422).json({ errors: errors.array()[0].msg });
@@ -424,8 +336,6 @@ router.put("/education", educationCheck, async (req, res) => {
       }
     );
 
-    // profile.education.unshift(newEdu);
-    // await profile.save();
     console.log(chalk.blue("New education has been added successfully!"));
     res.json(profile);
   } catch (error) {
@@ -499,7 +409,7 @@ router.delete("/education/:edu_id", auth, async (req, res) => {
   try {
     let profile = await Profile.findOne({ user: req.user.id });
 
-    // Check if record exists:
+    // Check if index exists:
     const eduIndex = profile.education
       .map((item) => item._id)
       .includes(req.params.edu_id);
@@ -511,9 +421,6 @@ router.delete("/education/:edu_id", auth, async (req, res) => {
       { user: req.user.id },
       { $pull: { education: { _id: req.params.edu_id } } }
     );
-
-    // profile.education.splice(removeIndex, 1);
-    // await profile.save();
 
     console.log(chalk.blue(`User profile education was successfully removed!`));
     res.json(profile);
@@ -570,27 +477,3 @@ router.get("/github/:username", async (req, res) => {
 });
 
 module.exports = router;
-
-// const profileExpFields = {};
-// const experience = (profile.experience = []);
-// if (title) experience.title = title;
-// if (company) experience.company = company;
-// if (location) experience.location = location;
-// if (from) experience.from = from;
-// if (to) experience.to = to;
-// if (current) experience.current = current;
-// if (description) experience.description = description;
-
-// Update profile:
-// const expId = profile.experience.map((elem) => elem._id);
-// console.log("exp ID: ", expId);
-// if (expId) {
-//   profile = await Profile.findOneAndUpdate(
-//     { user: req.user.id },
-//     { $set: experience },
-//     { new: true }
-//   );
-//   // console.log(profileFields);
-//   console.log(chalk.blue(`User profile experience updated successfully!`));
-//   return res.json(profile);
-// }
