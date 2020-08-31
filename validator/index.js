@@ -81,7 +81,6 @@ const educationCheck = [
 // Posts
 const postCheck = [
   auth,
-
   // text
   check("text", "Text field must not be empty.").trim().not().isEmpty()
 
