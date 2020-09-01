@@ -293,7 +293,6 @@ router.delete("/experience/:exp_id", auth, async (req, res) => {
 // @route PUT     api/profile/education
 // @description   api/profile/description
 // @access        Private
-
 router.put("/education", educationCheck, async (req, res) => {
   const {
     school,

@@ -5,8 +5,7 @@ const PostSchema = new mongoose.Schema({
   ref: "users"
  },
  text: {
-  type: String,
-  required: true
+  type: String
  },
  // Show user name and avatar 
  name: {

@@ -18,6 +18,10 @@ const { json } = require("express");
 // access      Private
 router.get("/", auth, async (req, res) => {
   try {
+    // Check if user is logged-in:
+    if (!req.user.id) {
+      return res.status(404).json({ msg: "User not found!" });
+    }
     const posts = await Post
       .find()
       .sort({ date: -1 }) //sort by recent posts
@@ -26,7 +30,7 @@ router.get("/", auth, async (req, res) => {
     console.log(chalk.blue("Fetching all users posts!"));
   } catch (error) {
     console.log(chalk.red(error.message));
-    return res.status(500).json({ msg: "Server Error!" });
+    return res.status(500).json({ msg: "Server error!" });
   }
 });
 
@@ -54,9 +58,9 @@ router.get("/:post_id", auth, async (req, res) => {
       return res.status(404).json({ msg: "Post not found!!" });
     }
     console.log(chalk.red(error.message));
-    return res.status(500).json({ msg: "Server Error!" });
+    return res.status(500).json({ msg: "Server error!" });
   }
-})
+});
 
 // @route      POST api/posts
 // @desc       Create a Post
@@ -123,8 +127,7 @@ router.put("/:post_id", postCheck, async (req, res) => {
     }
     return res.status(500).json({ msg: "Server error" });
   }
-})
-
+});
 
 // @route      DELETE api/posts/:post_id
 // @desc       Delete a Post
@@ -132,6 +135,10 @@ router.put("/:post_id", postCheck, async (req, res) => {
 router.delete("/:post_id", auth, async (req, res) => {
   try {
     const user = await User.findById(req.user.id);
+    // Check if user is logged-in/exists:
+    if (!user) {
+      return res.status(404).json({ msg: "User not found!" });
+    }
     let post = await Post.findById(req.params.post_id);
     // Check if post exists:
     if (!post) {
@@ -155,7 +162,100 @@ router.delete("/:post_id", auth, async (req, res) => {
     console.log(chalk.red(error.message));
     return res.status(500).json({ msg: "Server error" });
   }
-})
+});
 
+
+// Likes build:
+
+// @route   PUT api/posts/like/:id
+// @desc    users Like on posts
+// @access  Private
+router.put("/like/:post_id", auth, async (req, res) => {
+  try {
+    // Check if user exists:
+    if (!req.user.id) {
+      return res.status(404).json({ msg: "Error! User not found!" });
+    }
+
+    let post = await Post.findById(req.params.post_id);
+
+    // Make sure a user only likes a post just 1 time, by comparing 
+    // user like user Id to the logged-in user Id:
+    if (post.likes
+      .filter(like => like.user.toString() === req.user.id).length > 0) {
+      return res.status(400).json({ msg: "Post already liked!" });
+    }
+    post = await Post.findOneAndUpdate(
+      { _id: req.params.post_id },
+      {
+        $push: {
+          likes: [
+            { user: req.user.id }
+          ]
+        }
+      },
+      { new: true }
+    );
+
+    // post.likes.unshift({ user: req.user.id });
+    // await post.save();
+    res.json(post.likes);
+    console.log(chalk.blue("User successfully liked a post!"));
+
+  } catch (error) {
+    console.log(chalk.red(error.message));
+    if (error.kind === "ObjectId") {
+      return res.status(404).json({ msg: "Post not found!" });
+    }
+    return res.status(500).json({ msg: "Server error" });
+  }
+});
+
+// @route   PUT api/posts/unlike/:id
+// @desc    users remove their like on posts
+// @access  Private
+router.delete("/unlike/:post_id", auth, async (req, res) => {
+  try {
+    // Check if user exists:
+    if (!req.user.id) {
+      return res.status(404).json({ msg: "Error! User not found!" });
+    }
+    let post = await Post.findById(req.params.post_id);
+
+    const likes = post.likes;
+    // Make sure a user only likes a post just 1 time, by comparing 
+    // user like user is to the logged-in: 
+    if (likes
+      .filter(like => like.user.toString() === req.user.id).length === 0) {
+      return res.status(400).json({ msg: "No likes founds on this Post!" });
+    }
+    // Get remove index:  
+
+    const removeIndex = likes
+      .map(like => like.user.toString())
+      .indexOf(req.user.id)
+
+    post = await Post.findOneAndUpdate(
+      { _id: req.params.post_id },
+      {
+        $pull: {
+          likes:
+            { user: req.user.id }
+
+        }
+      },
+      { new: true }
+    )
+    // likes.splice(removeIndex, 1);
+    // post.save();
+
+    res.json(likes);
+    console.log(chalk.blue("User successfully unliked a post!"));
+  } catch (error) {
+    console.log(chalk.red(error.message));
+    res.status(500).json({ msg: "Server error!" });
+  }
+
+});
 
 module.exports = router;
