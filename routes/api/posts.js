@@ -341,7 +341,7 @@ router.delete("/comment/:post_id/:comment_id", auth, async (req, res) => {
     // Pull out comment:
     const comment = post.comments.find(comment =>
       comment.id === req.params.comment_id);
-    console.log(req.user.id)
+    // console.log(req.user.id)
 
     // Check if comment exists:
     if (!comment) {
@@ -358,6 +358,8 @@ router.delete("/comment/:post_id/:comment_id", auth, async (req, res) => {
       .map(comment => comment.user.toString())
       .indexOf(req.user.id);
     console.log(removeIndex);
+
+    // const commentIndex = post.comments.map()
 
 
     post.comments.splice(removeIndex, 1);

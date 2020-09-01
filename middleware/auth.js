@@ -23,7 +23,7 @@ module.exports = function (req, res, next) {
     const activeUser = User.findById(req.user);
 
     if (!activeUser) {
-      return res.status(401).json({ msg: "Error! User no longer exists" });
+      return res.status(404).json({ msg: "Error! User no longer exists" });
     }
 
     next();

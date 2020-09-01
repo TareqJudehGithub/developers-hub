@@ -134,10 +134,16 @@ router.post("/", profileCheck, async (req, res) => {
   };
 
   try {
+    // Fetching logged-in user:
+    const user = await User.findById(req.user.id);
+    // Fetching logged-in user's profile:
     let profile = await Profile.findOne({ user: req.user.id });
 
     // Update Profile:
     if (profile) {
+      if (!user) {
+        return res.status(404).json({ msg: "User not found!" });
+      }
       updated = Date.now();
       profile = await Profile.findOneAndUpdate(
         { user: req.user.id },
@@ -149,7 +155,12 @@ router.post("/", profileCheck, async (req, res) => {
     }
 
     // Create new profile:
-    console.log(`user: ${req.user.id}`);
+
+    // Check user exists:
+    if (!user) {
+      return res.status(404).json({ msg: "User not found!" });
+    }
+
     profile = await Profile.findOneAndUpdate(
       { user: req.user.id },
       {
@@ -158,8 +169,10 @@ router.post("/", profileCheck, async (req, res) => {
       { upsert: true }
     );
 
+    // const user = await User.findOne({ user: req.user.id });
     console.log(chalk.blue(`User new profile was successfully! created!`));
-    return res.json(profile);
+    res.json(profileFields);
+
   } catch (error) {
     console.log(chalk.red(error.message));
     return res.status(500).json({ errors: `Server Error! ${error}` });
