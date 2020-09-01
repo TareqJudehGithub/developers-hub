@@ -9,18 +9,22 @@ const User = require("../../models/User");
 const Post = require("../../models/Post");
 const Profile = require("../../models/Profile");
 const chalk = require("chalk");
-const { json } = require("express");
 
-
+// IMPORTANT Implement GET all posts auth: block deleted users acces.
 
 // @route      GET api/posts
 // @desc       GET all Post
 // access      Private
 router.get("/", auth, async (req, res) => {
   try {
-    // Check if user is logged-in:
-    if (!req.user.id) {
-      return res.status(404).json({ msg: "User not found!" });
+
+    const user = await User
+      .findById(req.user.id)
+      .select("-password");
+
+    // Check if user exists:
+    if (!user) {
+      return res.status(404).json({ msg: "User does not exist!" });
     }
     const posts = await Post
       .find()
@@ -39,9 +43,8 @@ router.get("/", auth, async (req, res) => {
 // access      Private
 router.get("/:post_id", auth, async (req, res) => {
   try {
+
     const user = await User.findById(req.user.id);
-
-
     console.log("req.user.id", req.user.id);
 
     const post = await Post.findById(req.params.post_id);
@@ -75,7 +78,12 @@ router.post("/", postCheck, async (req, res) => {
     // Fetch user by Id 
     const user = await User
       .findById(req.user.id)
-      .select("-password")
+      .select("-password");
+
+    // Check user exists:
+    if (!user) {
+      res.status(404).json({ msg: "User not found!" });
+    };
 
     // New post:
     const { text } = req.body;
@@ -107,7 +115,18 @@ router.put("/:post_id", postCheck, async (req, res) => {
   if (!errors.isEmpty()) {
     return res.status(422).json({ errors: errors.array()[0].msg });
   }
+
   try {
+    // Fetch user by Id 
+    const user = await User
+      .findById(req.user.id)
+      .select("-password")
+
+    // Check user exists:
+    if (!user) {
+      res.status(404).json({ msg: "User not found!" });
+    }
+
     const { text } = req.body;
     let post = await Post.findById(req.params.post_id);
     post = await Post.findOneAndUpdate(
@@ -134,7 +153,9 @@ router.put("/:post_id", postCheck, async (req, res) => {
 // @access     Private
 router.delete("/:post_id", auth, async (req, res) => {
   try {
-    const user = await User.findById(req.user.id);
+    const user = await User
+      .findById(req.user.id)
+      .select("-password");
     // Check if user is logged-in/exists:
     if (!user) {
       return res.status(404).json({ msg: "User not found!" });
@@ -231,9 +252,9 @@ router.delete("/unlike/:post_id", auth, async (req, res) => {
     }
     // Get remove index:  
 
-    const removeIndex = likes
-      .map(like => like.user.toString())
-      .indexOf(req.user.id)
+    // const removeIndex = likes
+    //   .map(like => like.user.toString())
+    //   .indexOf(req.user.id)
 
     post = await Post.findOneAndUpdate(
       { _id: req.params.post_id },
@@ -258,4 +279,98 @@ router.delete("/unlike/:post_id", auth, async (req, res) => {
 
 });
 
+// Comments Build
+
+// @route   POST api/posts/comment/:id
+// @desc    Add new comment to posts
+// @access  Private
+router.post("/comment/:post_id", postCheck, async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(422).json({ errors: errors.array()[0].msg });
+  }
+
+  try {
+    const user = await User
+      .findById(req.user.id)
+      .select("-password");
+
+    // Check if user exists:
+    if (!user) {
+      return res.status(404).json({ msg: "User does not exist!" });
+    }
+
+    const post = await Post.findById(req.params.post_id);
+
+    const newComment = {
+      text: req.body.text,
+
+      user: req.user.id,
+      name: user.name,
+      avatar: user.avatar
+    }
+    post.comments.unshift(newComment);
+    await post.save();
+
+    res.json(post.comments);
+    console.log("User added a new comment!");
+  } catch (error) {
+    console.log(chalk.red(error.message));
+    if (error.kind === "ObjectId") {
+      return res.status(404).json({ msg: "User not found!" });
+    }
+  }
+})
+
+// @route   DELETE api/posts/comment/:id
+// @desc    Delete a comment
+// @access  Private
+router.delete("/comment/:post_id/:comment_id", auth, async (req, res) => {
+  const user = await User
+    .findById(req.user.id)
+    .select("-password");
+
+  // Check if user exists:
+  if (!user) {
+    return res.status(404).json({ msg: "User does not exist!" });
+  }
+
+  try {
+    const post = await Post.findById(req.params.post_id);
+
+    // Pull out comment:
+    const comment = post.comments.find(comment =>
+      comment.id === req.params.comment_id);
+    console.log(req.user.id)
+
+    // Check if comment exists:
+    if (!comment) {
+      return res.status(404).json({ msg: "Comment not found!" });
+    }
+
+    // Check user authorization:
+    if (comment.user.toString() !== req.user.id) {
+      return res.status(403).json({ msg: "This action is not authorized!" });
+    }
+
+    // Get remove index:
+    const removeIndex = post.comments
+      .map(comment => comment.user.toString())
+      .indexOf(req.user.id);
+    console.log(removeIndex);
+
+
+    post.comments.splice(removeIndex, 1);
+    await post.save();
+
+    res.json(post.comments);
+    console.log("User deleted a comment!");
+  } catch (error) {
+    console.log(chalk.red(error.message));
+    if (error.kind === "ObjectId") {
+      return res.status(404).json({ msg: "User not found!" });
+    }
+
+  }
+})
 module.exports = router;
