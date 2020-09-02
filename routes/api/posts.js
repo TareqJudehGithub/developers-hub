@@ -9,6 +9,7 @@ const User = require("../../models/User");
 const Post = require("../../models/Post");
 const Profile = require("../../models/Profile");
 const chalk = require("chalk");
+const { findOneAndUpdate } = require("../../models/User");
 
 // IMPORTANT Implement GET all posts auth: block deleted users acces.
 
@@ -297,11 +298,17 @@ router.post("/comment/:post_id", postCheck, async (req, res) => {
 
     // Check if user exists:
     if (!user) {
-      return res.status(404).json({ msg: "User does not exist!" });
+      return res.status(404).json({ msg: "User not found!" });
     }
 
-    const post = await Post.findById(req.params.post_id);
+    let post = await Post.findById(req.params.post_id);
 
+    // Check if post exists:
+    if (!post) {
+      return res.status(404).json({ msg: "Post not found!" });
+    }
+
+    // Building comment body:
     const newComment = {
       text: req.body.text,
 
@@ -309,8 +316,19 @@ router.post("/comment/:post_id", postCheck, async (req, res) => {
       name: user.name,
       avatar: user.avatar
     }
-    post.comments.unshift(newComment);
-    await post.save();
+    post = await Post.findOneAndUpdate(
+      { _id: req.params.post_id },
+      {
+        $push:
+        {
+          comments: newComment
+        }
+      },
+      { new: true }
+    )
+    // post.comments.unshift(newComment);
+    // await post.save();
+    post = await Post.findById(req.params.post_id);
 
     res.json(post.comments);
     console.log("User added a new comment!");
@@ -336,43 +354,60 @@ router.delete("/comment/:post_id/:comment_id", auth, async (req, res) => {
   }
 
   try {
-    const post = await Post.findById(req.params.post_id);
+    let post = await Post.findById(req.params.post_id);
 
-    // Pull out comment:
-    const comment = post.comments.find(comment =>
-      comment.id === req.params.comment_id);
-    // console.log(req.user.id)
+    // Check if post exists:
+    if (!post) {
+      return res.status(404).json({ msg: "Post not found!" });
+    }
 
     // Check if comment exists:
-    if (!comment) {
-      return res.status(404).json({ msg: "Comment not found!" });
+    const commentIndex = post.comments
+      .map(index => index._id)
+      .includes(req.params.comment_id);
+    console.log("commentIndex: ", commentIndex);
+    if (!commentIndex) {
+      return res.status(404).json({ msg: "This comment is not found!" });
     }
+
+    // Pull out comment:
+    const comment = post.comments
+      .find(comment =>
+        comment.id === req.params.comment_id);
 
     // Check user authorization:
     if (comment.user.toString() !== req.user.id) {
       return res.status(403).json({ msg: "This action is not authorized!" });
-    }
+    };
 
-    // Get remove index:
-    const removeIndex = post.comments
-      .map(comment => comment.user.toString())
-      .indexOf(req.user.id);
-    console.log(removeIndex);
+    // Deleting own user comment:
+    post = await Post.findOneAndUpdate(
+      { _id: req.params.post_id },
+      {
+        $pull:
+        {
+          comments: { _id: req.params.comment_id }
+        }
+      }
+    )
 
-    // const commentIndex = post.comments.map()
+    // Refreshing users post comments: 
+    post = await Post.findById(req.params.post_id);
 
-
-    post.comments.splice(removeIndex, 1);
-    await post.save();
-
-    res.json(post.comments);
+    res.json(
+      post.comments.length <= 0
+        ?
+        `After deleting this comment, this post has no more comments.`
+        :
+        post.comments
+    );
     console.log("User deleted a comment!");
+
   } catch (error) {
     console.log(chalk.red(error.message));
     if (error.kind === "ObjectId") {
       return res.status(404).json({ msg: "User not found!" });
     }
-
   }
 })
 module.exports = router;

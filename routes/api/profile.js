@@ -226,17 +226,28 @@ router.put("/experience", experienceCheck, async (req, res) => {
 // @desc    Update experience in profile
 // @access  Private
 router.put("/experience/:exp_id", experienceCheck, async (req, res) => {
-  const { title, company, location, from, to, current, description } = req.body;
+  const {
+    title,
+    company,
+    location,
+    from,
+    to,
+    current,
+    description
+  } = req.body;
   let profile = await Profile.findOne({ user: req.user.id });
   try {
+
+    // Check if index exists:
     const expIndex = profile.experience
       .map((item) => item._id)
       .includes(req.params.exp_id);
-    console.log("index", expIndex);
-    console.log(`params: ${req.params.exp_id}`);
+
     if (!expIndex) {
       return res.status(404).json({ msg: "Record not found!" });
     }
+
+    // Updating experience:
     profile = await Profile.findOneAndUpdate(
       {
         experience: { $elemMatch: { _id: req.params.exp_id } },
@@ -284,7 +295,7 @@ router.delete("/experience/:exp_id", auth, async (req, res) => {
     if (!expIndex) {
       return res.status(401).json({ msg: "No record found!" });
     }
-    // Get remove index:
+
     profile = await Profile.findOneAndUpdate(
       { user: req.user.id },
       { $pull: { experience: { _id: req.params.exp_id } } }
