@@ -326,12 +326,80 @@ router.post("/comment/:post_id", postCheck, async (req, res) => {
       },
       { new: true }
     )
-    // post.comments.unshift(newComment);
-    // await post.save();
+
     post = await Post.findById(req.params.post_id);
 
     res.json(post.comments);
     console.log("User added a new comment!");
+  } catch (error) {
+    console.log(chalk.red(error.message));
+    if (error.kind === "ObjectId") {
+      return res.status(404).json({ msg: "User not found!" });
+    }
+  }
+})
+
+
+// @route   PUT api/posts/comment/:id
+// @desc    Edit User comment
+// @access  Private
+router.put("/comment/:post_id/:comment_id", postCheck, async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(422).json({ errors: errors.array()[0].msg });
+  }
+
+  try {
+    const user = await User
+      .findById(req.user.id)
+      .select("-password");
+
+    // Check user existance and authorization:
+    if (!user) {
+      return res.status(404).json({ msg: "User not found!" });
+    };
+
+    let post = await Post.findById(req.params.post_id);
+
+    // Check if post exists:
+    if (!post) {
+      return res.status(404).json({ msg: "Post not found!" });
+    }
+
+    //Pull out comment:
+    const comment = post.comments
+      .find(comment =>
+        comment.id === req.params.comment_id);
+
+    // Check user authorization:
+    if (comment.user.toString() !== req.user.id) {
+      return res.status(403).json({ msg: "This action is not authorized!" });
+    };
+
+    // Building comment body:
+    const newComment = {
+      text: req.body.text,
+
+      user: req.user.id,
+      name: user.name,
+      avatar: user.avatar,
+      updated: user.updated
+    }
+    post = await Post.findOneAndUpdate(
+      { _id: req.params.post_id },
+      {
+        $set:
+        {
+          comments: newComment
+        }
+      },
+      { new: true }
+    )
+
+    post = await Post.findById(req.params.post_id);
+
+    res.json(post.comments);
+    console.log("User successfully updated his/her comment!");
   } catch (error) {
     console.log(chalk.red(error.message));
     if (error.kind === "ObjectId") {
