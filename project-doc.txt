@@ -1,6 +1,7 @@
 Packages and dependecies:
 
 Backend:
+     Axios               npm i axios
      Express.js          npm i express
      express-validator   npm i express-validator
      bcryptjs            npm i bcryptjs
@@ -8,11 +9,21 @@ Backend:
      gravatar            npm i gravatar      (profile avatars)
      jsonwebtoken(jwt)   npm i jsonwebtoken
      mongoose            npm i mongoose
-     request             npm i request    HTTP requests for another API. for Github repos.
 
 Dev dependecies:
      Nodemon             npm i nodemon
      concurrently        npm i concurrently
+
+Frontend:
+React.js                 npx create-react-app client
+react-router-dom         npm i react-reouter-dom
+redux                    npm i redux
+react-redux              npm i react-redux
+redux-thunk              npm i react-thunk
+redux-devtools           npm i redux-devtools-extension
+moment(date/time format) npm i moment
+react-moment             npm i react-moment
+
 
 github API authentication url link:
 // ?            and    (use ? only for the 1st and. After that use &)
