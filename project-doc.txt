@@ -14,7 +14,9 @@ Dev dependecies:
      Nodemon             npm i nodemon
      concurrently        npm i concurrently
 
+
 Frontend:
+
 React.js                 npx create-react-app client
 react-router-dom         npm i react-reouter-dom
 redux                    npm i redux
@@ -23,10 +25,16 @@ redux-thunk              npm i react-thunk
 redux-devtools           npm i redux-devtools-extension
 moment(date/time format) npm i moment
 react-moment             npm i react-moment
-
+uuid                     npm i uuid
 
 github API authentication url link:
 // ?            and    (use ? only for the 1st and. After that use &)
 // per_page=5   display only 5 items per page
 // sort=created:asc     sort these items in an ascending order.
      
+ 
+REDUX
+
+Redux a state management tool best used for large applications.
+
+

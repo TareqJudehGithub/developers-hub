@@ -5,9 +5,12 @@ import Landing from "./components/layout/Landing";
 
 import Login from './components/auth/Login';
 import Register from './components/auth/Register';
+import Alert from "./components/layout/Alerts";
+
 
 
 import './App.css';
+
 
 const App = () => {
   return (
@@ -19,6 +22,7 @@ const App = () => {
           <Route exact path="/register" component={Register} />
           <Route exact path="/login" component={Login} />
         </Switch>
+        <Alert />
       </section>
     </Fragment>
   );
